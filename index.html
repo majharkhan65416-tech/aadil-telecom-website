@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATC — Aadil Telecom</title>
+<style>
+:root{--blue:#0756b5;--light:#eef5ff;--ink:#14243b}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;color:var(--ink);background:#f7faff}
+header{background:var(--blue);color:white;padding:18px max(5%,calc((100% - 1100px)/2));display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+header h1{margin:0;font-size:25px}header p{margin:5px 0 0}nav{display:flex;gap:14px;flex-wrap:wrap}nav a{color:white;text-decoration:none;font-weight:bold}
+.hero{padding:68px 18px;text-align:center;color:white;background:linear-gradient(130deg,#064b9e,#49a9ff)}.hero h2{font-size:clamp(30px,5vw,48px);margin:0 0 12px}.hero p{line-height:1.6}
+.btn{display:inline-block;background:var(--blue);color:white;border:0;border-radius:8px;padding:12px 18px;text-decoration:none;font-weight:bold;cursor:pointer}.hero .btn{background:white;color:var(--blue)}
+main{max-width:1100px;margin:auto;padding:34px 18px}h2{color:var(--blue)}.center{text-align:center}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}.card{background:white;border-radius:14px;padding:20px;box-shadow:0 5px 20px #dce7f5}.product img{width:100%;height:175px;object-fit:contain}.price{color:var(--blue);font-size:20px;font-weight:bold}.muted{color:#5d6c80;line-height:1.6}.contact{background:var(--light);border-radius:14px;padding:24px;text-align:center}footer{text-align:center;background:#102b50;color:white;padding:25px}
+@media(max-width:600px){header{justify-content:center;text-align:center}nav{justify-content:center}.hero{padding:48px 18px}}
+</style>
+</head>
+<body>
+<header><div><h1 id="brand">ATC — Aadil Telecom</h1><p id="tagline">Your Mobile, Our Responsibility</p></div>
+<nav><a href="#services">Services</a><a href="#products">Products</a><a href="#contact">Contact</a></nav></header>
+<section class="hero"><h2>Welcome to <span id="heroBrand">Aadil Telecom</span></h2><p>Mobile Phones · Repairing · Accessories</p><p>Your local destination for mobile solutions.</p><a class="btn" href="#products">Explore Products</a></section>
+<main>
+<section id="services"><h2 class="center">Our Services</h2><div class="grid">
+<div class="card center"><h3>📱 Mobile Phones</h3><p class="muted">Buying and selling mobile phones. Ask us about current availability.</p></div>
+<div class="card center"><h3>🔧 Mobile Repairing</h3><p class="muted">Repair and troubleshooting enquiries for your device.</p></div>
+<div class="card center"><h3>🎧 Accessories</h3><p class="muted">Chargers, covers, earphones and more.</p></div></div></section>
+<section id="products"><h2 class="center">Products</h2><p class="muted center">Contact us to confirm current price and availability.</p><div class="grid" id="productList"><p>Loading products…</p></div></section>
+<section id="contact" class="contact"><h2>Contact ATC</h2><p id="phone">Phone: Add your business number in Admin.</p><p id="address">Address: Add your shop address in Admin.</p><a class="btn" id="whatsapp" href="#" hidden>Chat on WhatsApp</a></section>
+</main><footer><strong id="footerBrand">ATC — Aadil Telecom</strong><p>Mobile Phones · Repairing · Accessories</p><small>© <span id="year"></span> Aadil Telecom</small></footer>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+document.getElementById('year').textContent=new Date().getFullYear();
+const list=document.getElementById('productList');
+function escapeText(v){return String(v??'')}
+function showProducts(rows){
+ list.replaceChildren();
+ if(!rows?.length){const p=document.createElement('p');p.className='muted';p.textContent='Products will be listed here soon. Please contact the shop for details.';list.append(p);return}
+ rows.forEach(p=>{
+  const card=document.createElement('article');card.className='card product';
+  if(p.image_url){const img=document.createElement('img');img.src=p.image_url;img.alt=p.name;img.loading='lazy';img.onerror=()=>img.hidden=true;card.append(img)}
+  const h=document.createElement('h3');h.textContent=p.name;card.append(h);
+  const cat=document.createElement('p');cat.className='muted';cat.textContent=p.category||'';card.append(cat);
+  const price=document.createElement('p');price.className='price';price.textContent='₹'+Number(p.price||0).toLocaleString('en-IN');card.append(price);
+  const desc=document.createElement('p');desc.className='muted';desc.textContent=p.description||'';card.append(desc);
+  const a=document.createElement('a');a.className='btn';a.textContent='Enquire on WhatsApp';
+  const msg='Hello ATC, I want to enquire about '+p.name+' (₹'+p.price+').';
+  a.href=window.ATC_PHONE?'https://wa.me/'+window.ATC_PHONE+'?text='+encodeURIComponent(msg):'#contact';
+  a.target='_blank';a.rel='noopener';card.append(a);list.append(card);
+ });
+}
+(async()=>{
+ if(!window.ATC_CONFIG||!window.ATC_CONFIG.SUPABASE_URL||window.ATC_CONFIG.SUPABASE_URL.includes('YOUR-PROJECT')){
+  list.innerHTML='<p class="muted">Setup needed: follow README_HINDI.txt to connect the online database.</p>';return;
+ }
+ if(!window.supabase){list.textContent='Database library could not load. Check internet connection.';return}
+ const db=window.supabase.createClient(window.ATC_CONFIG.SUPABASE_URL,window.ATC_CONFIG.SUPABASE_ANON_KEY);
+ const {data:s,error:se}=await db.from('atc_settings').select('*').eq('id',1).maybeSingle();
+ if(!se&&s){
+  document.title=s.business_name;document.getElementById('brand').textContent=s.business_name;
+  document.getElementById('footerBrand').textContent=s.business_name;
+  document.getElementById('heroBrand').textContent=s.business_name.replace(/^ATC\s*[—-]\s*/,'');
+  document.getElementById('tagline').textContent=s.tagline||'Your Mobile, Our Responsibility';
+  document.getElementById('phone').textContent='Phone: '+(s.phone||'Contact us for details');
+  document.getElementById('address').textContent='Address: '+(s.address||'Address not added yet');
+  const phone=(s.phone||'').replace(/\D/g,'');window.ATC_PHONE=phone;
+  if(phone){const w=document.getElementById('whatsapp');w.hidden=false;w.href='https://wa.me/'+phone;w.target='_blank';w.rel='noopener'}
+ }
+ const {data:p,error}=await db.from('atc_products').select('*').order('created_at',{ascending:false});
+ if(error){list.textContent='Could not load products. Check database setup.';return}showProducts(p);
+})();
+</script></body></html>
